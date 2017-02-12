@@ -9,7 +9,13 @@ function(context, args)
 		reg = /(?:developments on (\w[^ ]+\w) progress)|(?:date for ([^ ]+). )|(?:of project ([^ ]+) has)|(?:ook for (\w[^ ]+\w) in your)|(?:continues on ([^ ]+), hope)/g,
 		match,
 		cr = /[¡|¢|£|¤|¥|¦|§|¨|©|ª]/i,
-		plist = [], pcount = 0, pkey, ck;
+		plist = [], pcount = 0, plimit = 30, pkey, ck, lvl, msgs = [],
+		lg = m => msgs.push(m);
+	
+	lvl = #s.scripts.get_level({name: s.name});
+	if(lvl != "4") {
+		return {ok:false, msg:"NOT FULLSEC"}
+	}
 	
 	out = s.call({});
 	
@@ -20,12 +26,12 @@ function(context, args)
 	
 	out = s.call({[ck]: c2});
 	
-	l.log(ck + ': ' + c1 + ', ' + c2 + ', ' + c3);
+	lg(ck + ': ' + c1 + ', ' + c2 + ', ' + c3);
 	
 	var pass = out.substr(out.indexOf('this strategy ')+14);
 	pass = pass.substring(0, pass.indexOf(' '));
 	
-	l.log('pass: ' + pass);
+	lg('pass: ' + pass);
 	
 	for(let x of [ck, c1, c2, c3, pass]) {
 		if (cr.test(x)) {
@@ -52,7 +58,7 @@ function(context, args)
 				out = s.call({[ck]: c3, [ptest]:pass, project: p});
 				if(out.indexOf('No') < 0) {
 					pkey = ptest;
-					l.log('pkey: ' + pkey);
+					lg('pkey: ' + pkey);
 				}
 			}
 		}
@@ -63,19 +69,20 @@ function(context, args)
 				// l.log('  script corrupted: ' + sn);
 				continue;
 			}
-			let lvl = #s.scripts.get_level({name: sn});
+			lvl = #s.scripts.get_level({name: sn});
 			if(lvl == "4") {
 				//l.log('  script: ' + sn);
-				l.log(sn);
+				// l.log(sn);
+				lg(sn);
 				pcount++;
 			}
 		}
 		
-		if(pcount > 50) {
+		if(pcount > plimit) {
 			break;
 		}
 	}
 	
 			
-	return { ok:false,msg:l.get_log() };
+	return { ok:true,msg: msgs.join('\n')};
 }
